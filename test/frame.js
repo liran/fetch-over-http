@@ -20,3 +20,5 @@ console.log(array1, buffer);
 
 const enc = new TextEncoder(); // always utf-8
 console.log(enc.encode('This is a string converted to a Uint8Array'));
+
+console.log(this);

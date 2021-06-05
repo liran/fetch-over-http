@@ -1,7 +1,7 @@
 const https = require('https');
 const http = require('http');
 const conHeaders = require('../connection.headers');
-const FrameManager = require('../frame');
+const FrameManager = require('../tunnel/frame');
 
 const agentConfig = { keepAlive: true, maxSockets: 256, timeout: 30000 };
 const httpKeepAliveAgent = new http.Agent(agentConfig);
@@ -10,7 +10,9 @@ const httpsKeepAliveAgent = new https.Agent(agentConfig);
 class Connection {
   usage = 0;
 
-  response;
+  request = null;
+
+  response = null;
 
   fm = null;
 
@@ -49,27 +51,22 @@ class Connection {
         onResult(false);
       });
 
-      // client between server connceted
-      // req.on('socket', (e) => {
-      //   console.log(e);
-      // });
-
-      // server response header
+      // response header from server
       req.on('response', (res) => {
         onResult(true);
         // console.log('statusCode:', res.statusCode);
         // console.log('headers:', res.headers);
 
-        this.response = res;
-
         res.on('data', this.onResponeData);
         res.on('error', this.onResponseError);
+
+        this.response = res;
+        this.request = req;
       });
 
       req.write('');
 
-      req.on('error', (e) => {
-        console.error(e);
+      req.on('error', () => {
         onResult(false);
       });
     });
@@ -93,6 +90,10 @@ class Connection {
   onResponeData = (chunk) => {
     console.log('onResponeData:', chunk);
     this.fm.push(chunk);
+  };
+
+  sendHeader = (id, headers) => {
+    this.request.write();
   };
 }
 

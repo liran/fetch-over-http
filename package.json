@@ -12,7 +12,8 @@
   "dependencies": {
     "@babel/runtime": "^7.13.10",
     "byteify": "^2.0.10",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "web-streams-polyfill": "^3.0.3"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.10",

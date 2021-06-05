@@ -3,12 +3,6 @@ const BaseFrame = require('./base');
 class FrameManager {
   chunks = [];
 
-  constructor(onFrame) {
-    if (onFrame instanceof Function) this.onFrame = onFrame;
-  }
-
-  onFrame = (e) => e;
-
   push = (chunk = []) => {
     const last = this.chunks.length - 1;
     const lastChunk = this.chunks[last];
@@ -18,7 +12,7 @@ class FrameManager {
       this.chunks.push(chunk);
     }
 
-    this.pack();
+    return this.pack();
   };
 
   pack = () => {
@@ -45,11 +39,7 @@ class FrameManager {
       }
     }
 
-    if (frames.length > 0) {
-      for (const item of frames) {
-        this.onFrame(item);
-      }
-    }
+    return frames;
   };
 }
 
