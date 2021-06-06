@@ -13,10 +13,7 @@ class Tunnel {
 
   fm = new FrameManager();
 
-  constructor(readable, writable) {
-    this.readable = readable;
-    this.writable = writable;
-
+  constructor() {
     this.readChunk();
   }
 
@@ -36,30 +33,34 @@ class Tunnel {
     }
   };
 
-  onFrame = (frame) => {
+  onHeaderFrame = (frame) => {
     const id = frame.id;
+    if (!this.sessions[id]) {
+      const ctx = new Context();
+      try {
+        const text = new TextDecoder().decode(frame.bytes);
+        const opts = JSON.parse(text);
+        ctx.headers = opts.headers || {};
+        ctx.url = opts.url;
+        ctx.method = opts.method || 'GET';
+        if (ctx.method !== 'GET' && ctx.method !== 'HEAD') {
+          const { readable, writable } = new TransformStream();
+          ctx.body = readable;
+          ctx.fetchBodyWriter = writable.getWriter();
+        }
+
+        this.sessions[id] = ctx;
+        if (this.listen.fetch instanceof Function) this.listen.fetch(ctx);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  onFrame = (frame) => {
     switch (frame.type) {
       case 0x1: // header
-        if (!this.sessions[id]) {
-          const ctx = new Context();
-          try {
-            const text = new TextDecoder().decode(frame.bytes);
-            const opts = JSON.parse(text);
-            ctx.headers = opts.headers || {};
-            ctx.url = opts.url;
-            ctx.method = opts.method || 'GET';
-            if (ctx.method !== 'GET' && ctx.method !== 'HEAD') {
-              const { readable, writable } = new TransformStream();
-              ctx.body = readable;
-              ctx.fetchBodyWriter = writable.getWriter();
-            }
-
-            this.sessions[id] = ctx;
-            if (this.listen.fetch instanceof Function) this.listen.fetch(ctx);
-          } catch (error) {
-            console.error(error);
-          }
-        }
+        this.onHeaderFrame();
         break;
       default:
         break;
@@ -73,6 +74,12 @@ class Tunnel {
   close = () => {
     console.log('normal close tunnel');
   };
+
+  fetch = (url, options) => {};
+
+  suck = (readable) => {};
+
+  pipe = (writable) => {};
 }
 
 module.exports = Tunnel;

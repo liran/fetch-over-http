@@ -1,5 +1,5 @@
 const byteify = require('byteify');
-const utils = require('../src/utils');
+const utils = require('../tunnel/utils');
 
 const val = utils.random();
 const serializedUint32 = byteify.serializeUint32(val);
@@ -21,4 +21,7 @@ console.log(array1, buffer);
 const enc = new TextEncoder(); // always utf-8
 console.log(enc.encode('This is a string converted to a Uint8Array'));
 
-console.log(this);
+const dec = new TextDecoder();
+console.log(dec.decode(new Uint8Array(Buffer.from('hello'))));
+
+console.log(Buffer.from('hello'), Buffer.from('hello').slice(1), [...Buffer.from('hello')]);

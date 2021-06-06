@@ -1,18 +1,17 @@
 {
-  "name": "fetch-over-http",
+  "name": "fetch-tunnel",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "https://github.com/liran/fetch-over-http.git",
+  "repository": "https://github.com/liran/fetch-tunnel.git",
   "author": "liran <857271370@qq.com>",
   "license": "MIT",
   "scripts": {
     "p": "yarn run build && yarn publish dist",
-    "build": "rm -rf dist && babel src -d dist && cp package.json dist"
+    "build": "rm -rf dist && babel tunnel -d dist && cp package.json dist"
   },
   "dependencies": {
     "@babel/runtime": "^7.13.10",
     "byteify": "^2.0.10",
-    "lodash": "^4.17.21",
     "web-streams-polyfill": "^3.0.3"
   },
   "devDependencies": {
