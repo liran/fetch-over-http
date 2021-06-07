@@ -1,1 +1,2 @@
 - https://developers.google.com/web/fundamentals/performance/http2?hl=zh-cn
+- https://nodejs.org/en/docs/guides/backpressuring-in-streams/#lifecycle-of-pipe

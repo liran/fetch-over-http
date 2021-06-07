@@ -32,6 +32,8 @@ function run() {
     tunnel.suck(res);
   });
 
+  return;
+
   // fetch A
   tunnel.fetch('https://wwww.baidu.com').then((res) => {
     console.log('A:', res);

@@ -1,35 +1,49 @@
 const FrameManager = require('./frame');
 const Context = require('./context');
 const { TransformStream } = require('./stream');
+const { createCork } = require('./utils');
 
 class Tunnel {
   sessions = {};
 
   listen = {};
 
-  readable = null;
-
-  writable = null;
-
   fm = new FrameManager();
 
-  constructor() {
-    this.readChunk();
+  highWaterMark = 250; // frame counts
+
+  frames = [];
+
+  uncork = null;
+
+  constructor({ highWaterMark = 250 }) {
+    this.highWaterMark = highWaterMark;
   }
 
-  readChunk = async () => {
-    const reader = this.readable.getReader();
+  readChunk = async (reader) => {
     for (;;) {
       const { value, done } = await reader.read();
       if (done) {
-        this.close();
+        this.onClose();
         return;
       }
 
       const frames = this.fm.push(value);
-      for (const item of frames) {
-        this.onFrame(item);
+
+      this.frames.push(...frames);
+
+      // check frame invalid
+      // to do
+
+      if (this.frames.length >= this.highWaterMark) {
+        const c = createCork();
+        this.uncork = c.uncork;
+        await c.cork();
       }
+
+      // for (const item of frames) {
+      //   this.onFrame(item);
+      // }
     }
   };
 
@@ -71,13 +85,16 @@ class Tunnel {
     this.listen[type] = cb;
   };
 
-  close = () => {
+  onClose = () => {
     console.log('normal close tunnel');
   };
 
   fetch = (url, options) => {};
 
-  suck = (readable) => {};
+  suck = (readable) => {
+    const reader = readable.getReader();
+    this.readChunk(reader);
+  };
 
   pipe = (writable) => {};
 }
