@@ -1,33 +1,42 @@
+const { buildFrame, canBuildFrame } = require('./frame');
+
 class Channel {
   buffer = [];
 
-  highWaterMark = 250 * 1024;
+  frames = [];
 
-  readSize = 20 * 1024;
+  frameHighWaterMark = 10; // frame count
 
   waitRead = null;
 
   waitWrite = null;
 
-  complete = false;
-
-  constructor(highWaterMark) {
-    if (highWaterMark) this.highWaterMark = highWaterMark;
+  constructor(frameHighWaterMark) {
+    if (frameHighWaterMark) this.frameHighWaterMark = frameHighWaterMark;
   }
 
-  write = (chunk) => {
-    if (chunk) {
-      this.buffer.push(...chunk);
-    } else {
-      this.complete = true;
+  tryBuildFrame = () => {
+    for (;;) {
+      if (!canBuildFrame(this.buffer)) break;
+
+      const frame = buildFrame(this.buffer); // length of the buffer will be changed
+      if (frame) this.frames.push(frame);
     }
+  };
+
+  write = (chunk) => {
+    this.buffer.push(...chunk);
+
+    this.tryBuildFrame();
+
+    if (this.frames.length < 1) return;
 
     if (this.waitRead) {
       this.waitRead();
       this.waitRead = null;
     }
 
-    if (!this.complete && this.buffer.length >= this.highWaterMark) {
+    if (this.frames.length >= this.frameHighWaterMark) {
       return new Promise((resolve) => {
         this.waitWrite = resolve;
       });
@@ -35,26 +44,24 @@ class Channel {
   };
 
   read = () => {
-    if (!this.complete && this.buffer.length === 0) {
-      return new Promise((resolve) => {
-        this.waitRead = () => {
-          const chunk = this.buffer.splice(0, this.readSize);
-          resolve({ done: this.isDone(), chunk });
-        };
-      });
-    }
+    const frame = this.frames.shift();
 
-    const chunk = this.buffer.splice(0, this.readSize);
     if (this.waitWrite) {
       this.waitWrite();
       this.waitWrite = null;
     }
-    return { done: this.isDone(), chunk };
+
+    if (frame) return frame;
+
+    return new Promise((resolve) => {
+      this.waitRead = () => resolve(this.frames.shift());
+    });
   };
 
-  isDone = () => this.complete && this.buffer.length === 0;
-
   reset = () => {
+    this.buffer = [];
+    this.frames = [];
+
     if (this.waitWrite) {
       this.waitWrite();
       this.waiting = null;
@@ -64,10 +71,6 @@ class Channel {
       this.waitRead();
       this.waitRead = null;
     }
-
-    this.buffer = [];
-
-    this.complete = false;
   };
 }
 

@@ -1,17 +1,26 @@
-const BaseFrame = require('./base');
+const { BaseFrame } = require('./base');
 
 class HeaderFrame extends BaseFrame {
-  type = 0x1;
+  static type = 0x1;
 
-  constructor(id, o = {}) {
-    super();
+  type = HeaderFrame.type;
 
-    this.id = id;
-    
+  data; // parsed data
+
+  set = (o = {}) => {
     const te = new TextEncoder();
     this.bytes = te.encode(JSON.stringify(o));
-    this.length = this.bytes.length;
-  }
+  };
+
+  parse = (bytes = []) => {
+    try {
+      const text = new TextDecoder().decode(bytes);
+      this.data = JSON.parse(text);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
 }
 
-module.exports = HeaderFrame;
+module.exports = { HeaderFrame };

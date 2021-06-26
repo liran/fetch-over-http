@@ -1,11 +1,9 @@
-const FrameManager = require('./frame');
-const Context = require('./context');
+const { Response } = require('./response');
 const { TransformStream } = require('./stream');
-const { createCork } = require('./utils');
 const Channel = require('./channel');
 
 class Tunnel {
-  listen = {};
+  sessions = {};
 
   channel = new Channel();
 
@@ -23,11 +21,20 @@ class Tunnel {
       for (;;) {
         const { value, done } = await reader.read();
         if (done) {
-          this.channel.write(null);
           this.onClose();
           return;
         }
         await this.channel.write(value);
+      }
+    } catch (error) {
+      this.onError(error);
+    }
+  };
+
+  distributeFrame = async () => {
+    try {
+      for (;;) {
+        const frame = await this.channel.read();
       }
     } catch (error) {
       this.onError(error);
@@ -58,19 +65,7 @@ class Tunnel {
     }
   };
 
-  onFrame = (frame) => {
-    switch (frame.type) {
-      case 0x1: // header
-        this.onHeaderFrame();
-        break;
-      default:
-        break;
-    }
-  };
-
-  on = (type, cb) => {
-    this.listen[type] = cb;
-  };
+  onFetch = () => {};
 
   onError = (error) => {
     console.log(error);
@@ -80,7 +75,11 @@ class Tunnel {
     console.log('normal close tunnel');
   };
 
-  fetch = (url, options) => {};
+  fetch = (url, options) => {
+    return new Promise((resolve, reject) => {
+      const ctx = new Response();
+    });
+  };
 }
 
 module.exports = Tunnel;
